@@ -8,7 +8,7 @@ const firebaseConfig = {
   projectId: 'todoliez',
   storageBucket: 'todoliez.firebasestorage.app',
   messagingSenderId: '1001003533678',
-  appId: '1:1001003533678:web:bea6aaf621f6b90861ed7f',
+  appId: '1:1001003533678:web:bea6aaf621f6b90861ed7f'
 };
 
 // Inisialisasi Firebase
@@ -16,4 +16,3 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 export { db };
-
