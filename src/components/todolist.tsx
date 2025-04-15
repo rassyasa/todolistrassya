@@ -71,14 +71,17 @@ export default function TodoList() {
       confirmButtonText: "Tambah",
       cancelButtonText: "Batal",
       preConfirm: () => {
-        return [
-          (document.getElementById("swal-input1") as HTMLInputElement)?.value,
-          (document.getElementById("swal-input2") as HTMLInputElement)?.value,
-        ];
+        const name = (document.getElementById("swal-input1") as HTMLInputElement)?.value;
+        const deadline = (document.getElementById("swal-input2") as HTMLInputElement)?.value;
+        if (!name || !deadline) {
+          Swal.showValidationMessage("Semua field harus diisi!");
+          return;
+        }
+        return [name, deadline];
       },
     });
 
-    if (formValues && formValues[0] && formValues[1]) {
+    if (formValues) {
       const newTask: Omit<Task, "id"> = {
         text: formValues[0],
         completed: false,
@@ -105,14 +108,17 @@ export default function TodoList() {
       confirmButtonText: "Update",
       cancelButtonText: "Batal",
       preConfirm: () => {
-        return [
-          (document.getElementById("swal-input1") as HTMLInputElement)?.value,
-          (document.getElementById("swal-input2") as HTMLInputElement)?.value,
-        ];
+        const name = (document.getElementById("swal-input1") as HTMLInputElement)?.value;
+        const deadline = (document.getElementById("swal-input2") as HTMLInputElement)?.value;
+        if (!name || !deadline) {
+          Swal.showValidationMessage("Semua field harus diisi!");
+          return;
+        }
+        return [name, deadline];
       },
     });
 
-    if (formValues && formValues[0] && formValues[1]) {
+    if (formValues) {
       const taskRef = doc(db, "tasks", task.id);
       try {
         await updateDoc(taskRef, {
