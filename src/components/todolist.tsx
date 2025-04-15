@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { db } from "../app/lib/firebase";
 import {
   collection,
@@ -19,16 +19,10 @@ type Task = {
   deadline: string;
 };
 
-type SortKey = "text" | "deadline" | "remaining";
-type SortOrder = "asc" | "desc";
-
 export default function TodoList() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [sortKey, setSortKey] = useState<SortKey>("text");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
-
-  // Trigger render setiap detik untuk real-time timer
   const [, setTime] = useState(Date.now());
+
   useEffect(() => {
     const interval = setInterval(() => {
       setTime(Date.now());
@@ -57,7 +51,7 @@ export default function TodoList() {
     const now = Date.now();
     const difference = deadlineTime - now;
 
-    if (difference <= 0) return "Waktu habis!";
+    if (difference <= 0) return "waktu habis";
 
     const hours = Math.floor(difference / (1000 * 60 * 60));
     const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
@@ -66,28 +60,7 @@ export default function TodoList() {
     return `${hours}h ${minutes}m ${seconds}s`;
   }, []);
 
-  const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => {
-      let compareVal = 0;
-      if (sortKey === "text") {
-        compareVal = a.text.localeCompare(b.text);
-      } else if (sortKey === "deadline") {
-        compareVal = new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-      } else if (sortKey === "remaining") {
-        compareVal =
-          new Date(a.deadline).getTime() - Date.now() -
-          (new Date(b.deadline).getTime() - Date.now());
-      }
-      return sortOrder === "asc" ? compareVal : -compareVal;
-    });
-  }, [tasks, sortKey, sortOrder]);
-
-  const toggleSort = (key: SortKey) => {
-    setSortKey((prevKey) => (prevKey === key ? key : key));
-    setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
-  };
-
-  const addTask = async (): Promise<void> => {
+  const addTask = async () => {
     const { value: formValues } = await Swal.fire({
       title: "Tambahkan tugas baru",
       html:
@@ -113,7 +86,7 @@ export default function TodoList() {
       };
       try {
         const docRef = await addDoc(collection(db, "tasks"), newTask);
-        setTasks((prevTasks) => [...prevTasks, { id: docRef.id, ...newTask }]);
+        setTasks((prev) => [...prev, { id: docRef.id, ...newTask }]);
         Swal.fire("Berhasil!", "Tugas ditambahkan.", "success");
       } catch (error) {
         console.error("Error adding task:", error);
@@ -146,9 +119,11 @@ export default function TodoList() {
           text: formValues[0],
           deadline: formValues[1],
         });
-        setTasks((prevTasks) =>
-          prevTasks.map((t) =>
-            t.id === task.id ? { ...t, text: formValues[0], deadline: formValues[1] } : t
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === task.id
+              ? { ...t, text: formValues[0], deadline: formValues[1] }
+              : t
           )
         );
         Swal.fire("Berhasil!", "Tugas berhasil diedit.", "success");
@@ -158,7 +133,7 @@ export default function TodoList() {
     }
   };
 
-  const deleteTask = async (id: string): Promise<void> => {
+  const deleteTask = async (id: string) => {
     const confirm = await Swal.fire({
       title: "Yakin ingin menghapus?",
       icon: "warning",
@@ -169,7 +144,7 @@ export default function TodoList() {
     if (confirm.isConfirmed) {
       try {
         await deleteDoc(doc(db, "tasks", id));
-        setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+        setTasks((prev) => prev.filter((t) => t.id !== id));
         Swal.fire("Berhasil!", "Tugas berhasil dihapus.", "success");
       } catch (error) {
         console.error("Error deleting task:", error);
@@ -178,111 +153,100 @@ export default function TodoList() {
   };
 
   const toggleComplete = async (id: string) => {
-    const updatedTasks = tasks.map((task) =>
-      task.id === id ? { ...task, completed: !task.completed } : task
-    );
-    setTasks(updatedTasks);
-
-    const taskRef = doc(db, "tasks", id);
-    await updateDoc(taskRef, {
-      completed: !tasks.find((task) => task.id === id)?.completed,
-    });
-  };
-
-  const getSortArrow = (key: SortKey) => {
-    if (sortKey !== key) return "";
-    return sortOrder === "asc" ? "▲" : "▼";
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    const updated = { ...task, completed: !task.completed };
+    setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    await updateDoc(doc(db, "tasks", id), { completed: updated.completed });
   };
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 p-4 text-white">
-      <h1 className="text-2xl font-bold text-center mb-6">TO DO LIST</h1>
+    <div className="max-w-3xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
+      <h1 className="text-3xl font-bold text-center mb-6 text-black">
+        💥 TO DO LIST 💥
+      </h1>
 
-      <div className="flex justify-center mb-4">
+      <div className="flex justify-center mb-6">
         <button
           onClick={addTask}
-          className="bg-indigo-400 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl font-semibold"
+          className="bg-blue-800 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-xl"
         >
           TAMBAH KEGIATAN
         </button>
       </div>
 
-      <div className="grid grid-cols-5 gap-4 font-semibold text-center text-white mb-2 px-6">
-        <div className="cursor-pointer" onClick={() => toggleSort("text")}>
-          Kegiatan {getSortArrow("text")}
+      <div className="bg-blue-900 text-white rounded-xl px-6 py-4">
+        <div className="grid grid-cols-5 gap-4 font-semibold text-center mb-3">
+          <div className="col-span-2">kegiatan</div>
+          <div>deadline</div>
+          <div>sisa waktu</div>
+          <div>aksi</div>
         </div>
-        <div className="cursor-pointer" onClick={() => toggleSort("deadline")}>
-          Deadline {getSortArrow("deadline")}
-        </div>
-        <div className="cursor-pointer" onClick={() => toggleSort("remaining")}>
-          Sisa Waktu {getSortArrow("remaining")}
-        </div>
+
+        {tasks.length === 0 ? (
+          <div className="text-center py-4">Belum ada tugas ditambahkan</div>
+        ) : (
+          <ul className="space-y-2">
+            <AnimatePresence>
+              {tasks.map((task) => {
+                const timeLeft = calculateTimeRemaining(task.deadline);
+                return (
+                  <motion.li
+                    key={task.id}
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="grid grid-cols-5 gap-4 items-center text-center bg-white text-black rounded-lg px-4 py-2"
+                  >
+                    <div className="flex items-center justify-start col-span-2 gap-2">
+                      <input
+                        type="checkbox"
+                        checked={task.completed}
+                        onChange={() => toggleComplete(task.id)}
+                        className="form-checkbox h-4 w-4"
+                      />
+                      <span
+                        className={`${
+                          task.completed
+                            ? "line-through text-gray-400"
+                            : "text-black"
+                        }`}
+                      >
+                        {task.text}
+                      </span>
+                    </div>
+                    <div>{new Date(task.deadline).toLocaleDateString()}</div>
+                    <div
+                      className={`${
+                        timeLeft === "waktu habis"
+                          ? "text-red-600 font-semibold"
+                          : ""
+                      }`}
+                    >
+                      {timeLeft}
+                    </div>
+                    <div className="flex justify-center gap-3 text-sm">
+                      <button
+                        onClick={() => editTask(task)}
+                        className="hover:underline"
+                      >
+                        edit
+                      </button>
+                      <button
+                        onClick={() => deleteTask(task.id)}
+                        className="hover:underline"
+                      >
+                        hapus
+                      </button>
+                    </div>
+                  </motion.li>
+                );
+              })}
+            </AnimatePresence>
+          </ul>
+        )}
       </div>
-
-      <ul className="space-y-2">
-        <AnimatePresence>
-          {sortedTasks.map((task) => {
-            const timeLeft = calculateTimeRemaining(task.deadline);
-            const isExpired = timeLeft === "Waktu habis!";
-
-            // 🌈 Warna baris berdasarkan status
-            const rowColor = task.completed
-              ? "bg-green-300"
-              : isExpired
-              ? "bg-red-300"
-              : "bg-yellow-300";
-
-            return (
-              <motion.li
-                key={task.id}
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className={`grid grid-cols-5 gap-4 items-center text-center px-6 py-2 rounded-lg ${rowColor}`}
-              >
-                <div className="flex items-center space-x-2 justify-start">
-                  <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => toggleComplete(task.id)}
-                    className="form-checkbox h-4 w-4 text-green-600"
-                  />
-                  <span
-                    className={`truncate max-w-[180px] text-left ${
-                      task.completed ? "line-through text-gray-700" : ""
-                    }`}
-                    title={task.text}
-                  >
-                    {task.text}
-                  </span>
-                </div>
-                <div>{new Date(task.deadline).toLocaleDateString()}</div>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-sm">⏰</span>
-                  <span>{timeLeft}</span>
-                </div>
-                <div className="text-right">
-                  <button
-                    onClick={() => editTask(task)}
-                    className="text-black hover:underline mr-2"
-                  >
-                    📝edit
-                  </button>
-                </div>
-                <div className="text-left">
-                  <button
-                    onClick={() => deleteTask(task.id)}
-                    className="text-black hover:underline"
-                  >
-                    🗑️hapus
-                  </button>
-                </div>
-              </motion.li>
-            );
-          })}
-        </AnimatePresence>
-      </ul>
     </div>
   );
 }
