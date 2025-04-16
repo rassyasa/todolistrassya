@@ -177,13 +177,13 @@ export default function TodoList() {
           onClick={addTask}
           className="bg-blue-800 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-xl"
         >
-          TAMBAH KEGIATAN
+          TAMBAH TUGAS
         </button>
       </div>
 
       <div className="bg-blue-900 text-white rounded-xl px-6 py-4">
         <div className="grid grid-cols-5 gap-4 font-semibold text-center mb-3">
-          <div className="col-span-2">kegiatan</div>
+          <div className="col-span-2">tugas</div>
           <div>deadline</div>
           <div>sisa waktu</div>
           <div>aksi</div>
