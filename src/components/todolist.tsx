@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { db } from "../app/lib/firebase";
 import {
   collection,
@@ -19,7 +19,7 @@ type Task = {
   deadline: string;
 };
 
-type SortOption = "abjad-asc" | "time-asc" ;
+type SortOption = "abjad-asc" | "time-asc";
 
 export default function TodoList() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -49,31 +49,32 @@ export default function TodoList() {
     fetchTasks();
   }, []);
 
-  const calculateTimeRemaining = useCallback((deadline: string): string => {
+  const calculateTimeRemaining = useCallback((deadline: string): number => {
     const deadlineTime = new Date(deadline).getTime();
     const now = Date.now();
-    const difference = deadlineTime - now;
-
-    if (difference <= 0) return "waktu habis";
-
-    const hours = Math.floor(difference / (1000 * 60 * 60));
-    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-    return `${hours}j ${minutes}m ${seconds}d`;
+    return deadlineTime - now;
   }, []);
+
+  const formatTimeRemaining = (ms: number): string => {
+    if (ms <= 0) return "waktu habis";
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+    return `${hours}j ${minutes}m ${seconds}d`;
+  };
 
   const sortedTasks = useMemo(() => {
     const sorted = [...tasks];
-    if (sortOption === "abjad-asc") {
-      sorted.sort((a, b) => a.text.localeCompare(b.text));
-    }  else if (sortOption === "time-asc") {
-      sorted.sort(
-        (a, b) =>
-          calculateTimeRemaining(a.deadline) -
-          calculateTimeRemaining(b.deadline)
-      );
-    } 
+    switch (sortOption) {
+      case "abjad-asc":
+        sorted.sort((a, b) => a.text.localeCompare(b.text));
+        break;
+      case "time-asc":
+        sorted.sort(
+          (a, b) => calculateTimeRemaining(a.deadline) - calculateTimeRemaining(b.deadline)
+        );
+        break;
+    }
     return sorted;
   }, [tasks, sortOption, calculateTimeRemaining]);
 
@@ -189,7 +190,7 @@ export default function TodoList() {
         💥 TO DO LIST 💥
       </h1>
 
-      <div className="flex justify-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
         <button
           onClick={addTask}
           className="bg-blue-800 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-xl"
@@ -198,13 +199,13 @@ export default function TodoList() {
         </button>
 
         <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value as SortOption)}
-            className="bg-gray-700 text-white px-4 py-2 rounded-lg"
-          >
-            <option value="abjad-asc">Abjad (A-Z)</option>
-            <option value="time-asc">Sisa Waktu (Terdekat)</option>
-          </select>
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value as SortOption)}
+          className="bg-gray-700 text-white px-4 py-2 rounded-lg"
+        >
+          <option value="abjad-asc">Sort by name</option>
+          <option value="time-asc">Sort by time</option>
+        </select>
       </div>
 
       <div className="bg-blue-900 text-white rounded-xl px-6 py-4">
@@ -220,8 +221,10 @@ export default function TodoList() {
         ) : (
           <ul className="space-y-2">
             <AnimatePresence>
-              {tasks.map((task) => {
-                const timeLeft = calculateTimeRemaining(task.deadline);
+              {sortedTasks.map((task) => {
+                const timeLeftMs = calculateTimeRemaining(task.deadline);
+                const timeLeftFormatted = formatTimeRemaining(timeLeftMs);
+
                 return (
                   <motion.li
                     key={task.id}
@@ -251,12 +254,12 @@ export default function TodoList() {
                     <div>{new Date(task.deadline).toLocaleDateString()}</div>
                     <div
                       className={`${
-                        timeLeft === "waktu habis"
+                        timeLeftFormatted === "waktu habis"
                           ? "text-red-600 font-semibold"
                           : ""
                       }`}
                     >
-                      {timeLeft}
+                      {timeLeftFormatted}
                     </div>
                     <div className="flex justify-center gap-3 text-sm">
                       <button
