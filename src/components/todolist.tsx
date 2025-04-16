@@ -19,6 +19,8 @@ type Task = {
   deadline: string;
 };
 
+type SortOption = "abjad-asc" | "time-asc" ;
+
 export default function TodoList() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [sortOption, setSortOption] = useState<SortOption>("time-asc");
