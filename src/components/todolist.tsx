@@ -21,6 +21,7 @@ type Task = {
 
 export default function TodoList() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [sortOption, setSortOption] = useState<SortOption>("time-asc");
   const [, setTime] = useState(Date.now());
 
   useEffect(() => {
@@ -57,8 +58,22 @@ export default function TodoList() {
     const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-    return `${hours}h ${minutes}m ${seconds}s`;
+    return `${hours}j ${minutes}m ${seconds}d`;
   }, []);
+
+  const sortedTasks = useMemo(() => {
+    const sorted = [...tasks];
+    if (sortOption === "abjad-asc") {
+      sorted.sort((a, b) => a.text.localeCompare(b.text));
+    }  else if (sortOption === "time-asc") {
+      sorted.sort(
+        (a, b) =>
+          calculateTimeRemaining(a.deadline) -
+          calculateTimeRemaining(b.deadline)
+      );
+    } 
+    return sorted;
+  }, [tasks, sortOption, calculateTimeRemaining]);
 
   const addTask = async () => {
     const { value: formValues } = await Swal.fire({
@@ -179,6 +194,15 @@ export default function TodoList() {
         >
           TAMBAH TUGAS
         </button>
+
+        <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value as SortOption)}
+            className="bg-gray-700 text-white px-4 py-2 rounded-lg"
+          >
+            <option value="abjad-asc">Abjad (A-Z)</option>
+            <option value="time-asc">Sisa Waktu (Terdekat)</option>
+          </select>
       </div>
 
       <div className="bg-blue-900 text-white rounded-xl px-6 py-4">
