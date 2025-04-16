@@ -242,25 +242,26 @@ export default function TodoList() {
                         className="form-checkbox h-4 w-4"
                       />
                       <span
-                        className={`${
-                          task.completed
+                        className={`${task.completed
                             ? "line-through text-gray-400"
                             : "text-black"
-                        }`}
+                          }`}
                       >
                         {task.text}
                       </span>
                     </div>
                     <div>{new Date(task.deadline).toLocaleDateString()}</div>
                     <div
-                      className={`${
-                        timeLeftFormatted === "waktu habis"
-                          ? "text-red-600 font-semibold"
-                          : ""
-                      }`}
+                      className={`${task.completed
+                          ? "text-green-600 font-semibold"
+                          : timeLeftFormatted === "waktu habis"
+                            ? "text-red-600 font-semibold"
+                            : ""
+                        }`}
                     >
-                      {timeLeftFormatted}
+                      {task.completed ? "selesai" : timeLeftFormatted}
                     </div>
+
                     <div className="flex justify-center gap-3 text-sm">
                       <button
                         onClick={() => editTask(task)}
